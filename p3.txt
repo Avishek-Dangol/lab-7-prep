@@ -1,7 +1,51 @@
 Hash table:
 
+Memory: Only stores entities that have the component, which is good when it's rare.
+But each entry is a separately allocated node with a next pointer and allocation
+overhead, plus empty buckets, so every entry costs much more than the data it holds.
+
+Speed: O(1) average, O(n) worst case. Hashing and then following pointers to nodes
+scattered across memory gives poor cache locality, so it's slower than O(1).
+
+Maintenance: Insert/erase are easy (O(1) average), with occasional rehashing as it
+grows. Removing an entity means erasing it from all K maps.
+
 Map:
+
+Memory: Only stores entities that have the component, but each tree node is
+bigger than a hash node (left, right and parent pointers plus balancing info).
+
+Speed: O(log n), and every step down the tree jumps to a new spot in memory, so it
+has the worst cache locality and is usually the slowest. It provides iterating in
+sorted entity-ID order.
+
+Maintenance: Insert/erase are simple at O(log n), with no rehashing. Removing an
+entity still means erasing it from all K maps.
 
 Sparse mapping 1:
 
+Memory: Always N * K * 4 bytes, even for empty (-1) slots. Wasteful when sparse, but
+no per-entry overhead, so it's efficient when entities have most components.
+
+Speed: O(1), just an index calculation. Because of row-major order, all of one
+entity's components sit in the same row, often in one cache line, so getting entity component
+is fast. Looping over one component type for every entity is a column
+walk that jumps K * 4 bytes each step, so it's less cache-friendly.
+
+Maintenance: Adding an entity is one push_back of a row of -1s. Adding or removing a
+component is a single write. Removing an entity leaves an empty row, so we either
+reuse the ID or compact the table, which changes IDs.
+
 Sparse mapping 2:
+
+Memory: N * K * 4 bytes at worst, but each component's vector can be sized
+separately, so rare components can use less. It needs K separate allocations.
+
+Speed: O(1). Looping over one component type for every entity reads a single row
+straight through memory, which is very cache-friendly, and that's the most common
+loop in a game engine. Getting all K components of one entity is a column walk across
+K different vectors, so it can cost up to K cache misses.
+
+Maintenance: Adding or removing a component is a single write. Adding an entity may
+mean growing up to K vectors. Removing an entity has the same reuse-or-compact
+tradeoff as mapping 1.

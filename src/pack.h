@@ -33,12 +33,12 @@ using packIndexToType = typename _packIndexToType<QueryIndex, Args...>::type;
 template <int Accumulated, typename QueryType, typename... Args>
 constexpr int _packTypeToIndex = -1;
 
-// base case for recursion
+// recursive case for packTypeToIndex
 template <int Accumulated, typename QueryType, typename First, typename... Rest>
 constexpr int _packTypeToIndex<Accumulated, QueryType, First, Rest...> =
     _packTypeToIndex<Accumulated + 1, QueryType, Rest...>;
 
-// recursive case for recursion
+// base case for packTypeToIndex when the type is found
 template <int Accumulated, typename QueryType, typename... Rest>
 constexpr int _packTypeToIndex<Accumulated, QueryType, QueryType, Rest...> = Accumulated;
 
